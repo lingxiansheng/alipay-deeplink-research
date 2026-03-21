@@ -2,6 +2,14 @@
 
 **17 Verified Vulnerabilities | 3 Devices | 308 Server Log Entries | 6 CVEs Applied**
 
+> **Alipay Mobile Payment Attack Surface — The Full-Stack Analysis by [Innora AI](https://innora.ai)**
+>
+> | Layer | Repository | Findings |
+> |-------|-----------|----------|
+> | Runtime | **[alipay-deeplink-research](https://github.com/sgInnora/alipay-deeplink-research)** (this repo) | 17 vulnerabilities, CVSS 9.3 |
+> | SDK | [alipay-securityguard-analysis](https://github.com/sgInnora/alipay-securityguard-analysis) | 9 CVEs, AVMP VM bypass, 97% unprotected APIs |
+> | Cryptography | [hash-collision-lab](https://github.com/sgInnora/hash-collision-lab) | 15 PoCs, IACR ePrint [2026/526](https://eprint.iacr.org/2026/526) |
+
 ---
 
 > ## ⚠️ CENSORSHIP UPDATE — 2026-03-15
