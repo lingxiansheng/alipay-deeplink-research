@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clean Test</title>
+<style>
+body{font-family:sans-serif;padding:16px;background:#fff;color:#333}
+.box{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+h2{color:#389e0d;font-size:15px}
+.item{padding:4px 0;font-size:13px}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+</style>
+</head><body>
+
+<h1 style="text-align:center;color:#1677ff;font-size:18px">Clean Page Test</h1>
+<p style="text-align:center;font-size:12px;color:#888">No JSAPI references at all</p>
+
+<div class="box"><h2>Environment</h2>
+<div class="item"><span class="label">Origin: </span><span class="value" id="v1"></span></div>
+<div class="item"><span class="label">URL: </span><span class="value" id="v2" style="word-break:break-all;font-size:10px"></span></div>
+<div class="item"><span class="label">UA: </span><span class="value" id="v3" style="word-break:break-all;font-size:10px"></span></div>
+<div class="item"><span class="label">Time: </span><span class="value" id="v4"></span></div>
+<div class="item"><span class="label">Bridge object: </span><span class="value" id="v5"></span></div>
+</div>
+
+<div class="box"><h2>This page has ZERO sensitive API keywords</h2>
+<div class="item">If you can see this text, the page rendered successfully.</div>
+<div class="item">If this is white screen, the issue is URL-level blocking.</div>
+</div>
+
+<script>
+document.getElementById('v1').textContent = location.origin;
+document.getElementById('v2').textContent = location.href;
+document.getElementById('v3').textContent = navigator.userAgent;
+document.getElementById('v4').textContent = new Date().toISOString();
+document.getElementById('v5').textContent = String(typeof window.AlipayJSBridge);
+</script>
+</body></html>

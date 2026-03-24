@@ -41,6 +41,33 @@
 
 **Archived versions**: [innora.ai/zfb/](https://innora.ai/zfb/) | This repository
 
+
+## Censorship Record
+
+Between March 15-20, 2026, **8 research articles** documenting these vulnerabilities were
+force-deleted from WeChat (China's largest social platform) at the request of Ant Group's
+law firm, Beijing Geyun Law Firm. The deletions occurred in two waves:
+
+**Wave 1 (March 15):** 4 articles deleted — whitelist bypass analysis, legal complaint rebuttal,
+GPS exfiltration report, and the "gag order rejected" follow-up.
+
+**Wave 2 (March 20):** 4 more articles deleted — IACR paper announcement, 1095-app surveillance
+list analysis, formal CAC complaint, and SecurityGuard SDK reverse engineering.
+
+The initial complaint citing "reputation infringement" was **rejected by WeChat's own review team**.
+The articles were subsequently removed after the complaint was resubmitted under China's
+Cybersecurity Law — with no specific legal provision cited and no appeal channel provided.
+
+This research has been independently validated by:
+- **IACR**: Academic paper accepted ([eprint.iacr.org/2026/526](https://eprint.iacr.org/2026/526))
+- **MITRE**: 15 CVE IDs assigned (Tickets #2005801, #2010319)
+- **22 countries**: Regulatory agencies across 22 jurisdictions have confirmed receipt
+- **Packet Storm Security**: Advisory #217089 published
+
+Full censorship timeline with evidence: [innora.ai/zfb/article_censorship.html](https://innora.ai/zfb/article_censorship.html)
+
+**Readers are encouraged to fork this repository as backup against further takedown attempts.**
+
 ## Critical Finding: Whitelist Bypass (CVSS 9.3)
 
 **The master key enabling all 17 vulnerabilities to be remotely exploitable by ANYONE:**

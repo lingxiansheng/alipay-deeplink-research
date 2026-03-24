@@ -10,7 +10,56 @@
 <meta property="og:url" content="https://innora.ai/zfb/privacy-analysis.html">
 <style>body{margin:0;padding:20px;background:#fff;}</style>
 </head>
-<body>
+<body style="padding-top:76px;">
+<!-- Innora Global Nav — injected -->
+<style>
+.innora-nav-wrap{position:fixed;top:0;left:0;width:100%;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif}
+.innora-nav{display:flex;justify-content:space-between;align-items:center;padding:0 20px;height:46px;background:rgba(18,18,26,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
+.innora-nav a.brand{color:#e0e0e8;text-decoration:none;font-weight:600;font-size:.95rem}
+.innora-nav-links{display:flex;list-style:none;margin:0;padding:0;gap:12px;flex-wrap:wrap}
+.innora-nav-links a{color:#9898a8;text-decoration:none;font-size:.8rem;transition:color .2s}
+.innora-nav-links a:hover,.innora-nav-links a.active{color:#4488ff}
+.innora-badge{display:flex;justify-content:center;align-items:center;gap:8px;height:26px;background:#000;font-size:.7rem;font-family:'SF Mono','Fira Code',monospace;border-bottom:1px solid rgba(255,255,255,.06)}
+.innora-badge a{color:#44cc88;text-decoration:none}.innora-badge a:hover{text-decoration:underline}
+.innora-badge span{color:#666}
+.innora-hmb{display:none;cursor:pointer;background:none;border:none;padding:4px}
+.innora-hmb i{display:block;width:20px;height:2px;margin:4px 0;background:#e0e0e8;transition:.3s}
+@media(max-width:900px){
+.innora-nav-links{display:none;position:absolute;top:46px;left:0;width:100%;flex-direction:column;background:rgba(18,18,26,.97);padding:8px 0;gap:0}
+.innora-nav-links.open{display:flex}
+.innora-nav-links li{text-align:center;padding:8px}
+.innora-hmb{display:block}
+}
+</style>
+<header class="innora-nav-wrap">
+<nav class="innora-nav">
+<a class="brand" href="/zfb/">Innora AI — Alipay Research</a>
+<ul class="innora-nav-links" id="inav">
+<li><a href="/zfb/">Main</a></li>
+<li><a href="/zfb/article_censorship.html">Censorship</a></li>
+<li><a href="/zfb/patchproxy-146k.html">PatchProxy</a></li>
+<li><a href="/zfb/wifi-rtt-tracking.html">WiFi RTT</a></li>
+<li><a href="/zfb/transport-encryption.html">Encryption</a></li>
+<li><a href="/zfb/privacy-analysis.html">Privacy</a></li>
+<li><a href="/zfb/regulatory-complaint.html">Regulatory</a></li>
+<li><a href="/zfb/rebuttal.html">Rebuttal</a></li>
+</ul>
+<button class="innora-hmb" onclick="document.getElementById('inav').classList.toggle('open')"><i></i><i></i><i></i></button>
+</nav>
+<div class="innora-badge">
+<span>Verify:</span>
+<a href="https://github.com/sgInnora/alipay-securityguard-analysis">Docker 37/37</a>
+<span>|</span>
+<a href="https://zenodo.org/records/19186848">Zenodo DOI</a>
+<span>|</span>
+<a href="https://eprint.iacr.org/2026/526">IACR 2026/526</a>
+<span>|</span>
+<a href="https://packetstormsecurity.com/files/217089/">Packet Storm</a>
+</div>
+</header>
+<!-- /Innora Global Nav -->
+
+
 <!-- Alipay Privacy Analysis | WeChat Public | 2026-03-17 --><section style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.75; color: #2c3e50; text-align: justify; letter-spacing: 0.5px; padding: 0 6px"><h1 style="font-size: 22px; font-weight: bold; color: #1a252f; margin: 30px 0 15px; border-bottom: 2px solid #00d4aa; padding-bottom: 10px; line-height: 1.4; background: linear-gradient(90deg, rgba(0,212,170,0.1) 0%, transparent 100%); padding: 10px 0 10px 12px">支付宝需要监控你的截屏、蓝牙和通话吗？一次完整的逆向工程分析</h1>
 <h2 style="font-size: 20px; font-weight: bold; color: #1a252f; margin: 25px 0 12px; padding-left: 12px; border-left: 4px solid #00d4aa; line-height: 1.4">对支付宝APK (v10.8.30) 208个API拦截点、22个行为监控和97%无保护接口的代码级分析</h2>
 

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVE-3 Simple Test</title>
+<style>
+body{font-family:sans-serif;padding:16px;background:#fff;color:#333}
+.box{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+h2{color:#389e0d;font-size:15px}
+.item{padding:4px 0;font-size:13px}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+#status{font-size:14px;color:#1677ff;text-align:center;padding:20px}
+</style>
+</head><body>
+
+<h1 style="text-align:center;color:#f5222d;font-size:18px">CVE-3 Diagnostic Test</h1>
+<p style="text-align:center;font-size:12px;color:#888">Step-by-step JSAPI isolation test</p>
+
+<div id="status">Page loaded. Running diagnostics...</div>
+<div id="results"></div>
+
+<script>
+var el = document.getElementById('results');
+var status = document.getElementById('status');
+var html = '';
+
+// Step 1: Basic page rendering proof
+html += '<div class="box"><h2>Step 1: Page Renders</h2>';
+html += '<div class="item"><span class="label">Origin: </span><span class="value">' + location.origin + '</span></div>';
+html += '<div class="item"><span class="label">URL: </span><span class="value" style="word-break:break-all;font-size:10px">' + location.href + '</span></div>';
+html += '<div class="item"><span class="label">UA: </span><span class="value" style="word-break:break-all;font-size:10px">' + navigator.userAgent + '</span></div>';
+html += '<div class="item"><span class="label">Time: </span><span class="value">' + new Date().toISOString() + '</span></div>';
+html += '</div>';
+el.innerHTML = html;
+
+// Step 2: Check AlipayJSBridge existence (NO calls yet)
+function step2() {
+  html += '<div class="box"><h2>Step 2: Bridge Detection (no API calls)</h2>';
+  html += '<div class="item"><span class="label">AlipayJSBridge exists: </span><span class="value">' + (!!window.AlipayJSBridge) + '</span></div>';
+  html += '<div class="item"><span class="label">typeof AlipayJSBridge: </span><span class="value">' + typeof window.AlipayJSBridge + '</span></div>';
+  if (window.AlipayJSBridge) {
+    html += '<div class="item"><span class="label">typeof .call: </span><span class="value">' + typeof window.AlipayJSBridge.call + '</span></div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  status.textContent = 'Step 2 done. Bridge: ' + (!!window.AlipayJSBridge);
+
+  // Step 3: ONLY if bridge exists, try tradePay after 3s
+  if (window.AlipayJSBridge) {
+    status.textContent = 'Bridge found! Will try tradePay in 3 seconds...';
+    setTimeout(step3, 3000);
+  }
+}
+
+// Step 3: Call tradePay (the suspected blocker)
+function step3() {
+  html += '<div class="box"><h2>Step 3: tradePay Call</h2>';
+  html += '<div class="item"><span class="label">Calling: </span><span class="value">AlipayJSBridge.call("tradePay", {orderStr: "SECURITY_TEST_INVALID_ORDER_2026"})</span></div>';
+  html += '</div>';
+  el.innerHTML = html;
+  status.textContent = 'Calling tradePay...';
+
+  try {
+    AlipayJSBridge.call('tradePay', {
+      orderStr: 'SECURITY_TEST_INVALID_ORDER_2026'
+    }, function(result) {
+      html += '<div class="box"><h2>Step 3 Result: tradePay Response</h2>';
+      html += '<div class="item"><span class="label">Response: </span><span class="value" style="word-break:break-all;font-size:10px">' + JSON.stringify(result) + '</span></div>';
+      html += '<div class="item"><span class="label">resultCode: </span><span class="value">' + (result.resultCode || result.result_code || 'N/A') + '</span></div>';
+      html += '</div>';
+      el.innerHTML = html;
+      status.textContent = 'tradePay responded: ' + JSON.stringify(result).substring(0, 80);
+      status.style.color = '#f5222d';
+    });
+  } catch(e) {
+    html += '<div class="box" style="background:#fff2f0;border-color:#ff4d4f"><h2 style="color:#cf1322">Step 3 ERROR</h2>';
+    html += '<div class="item"><span class="label">Exception: </span><span class="value">' + e.message + '</span></div>';
+    html += '<div class="item"><span class="label">Stack: </span><span class="value" style="font-size:9px;word-break:break-all">' + e.stack + '</span></div>';
+    html += '</div>';
+    el.innerHTML = html;
+    status.textContent = 'tradePay threw exception: ' + e.message;
+    status.style.color = '#f5222d';
+  }
+}
+
+// Listen for bridge ready event
+document.addEventListener('AlipayJSBridgeReady', function() {
+  step2();
+});
+
+// Also check immediately and after delays
+step2();
+setTimeout(step2, 1000);
+setTimeout(step2, 3000);
+</script>
+</body></html>

