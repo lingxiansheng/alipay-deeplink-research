@@ -41,7 +41,7 @@
 </script>
 </head>
 <body style="padding-top:76px;">
-<!-- Innora Global Nav — injected -->
+<!-- Innora Global Nav — bilingual -->
 <style>
 .innora-nav-wrap{position:fixed;top:0;left:0;width:100%;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif}
 .innora-nav{display:flex;justify-content:space-between;align-items:center;padding:0 20px;height:46px;background:rgba(18,18,26,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
@@ -63,21 +63,21 @@
 </style>
 <header class="innora-nav-wrap">
 <nav class="innora-nav">
-<a class="brand" href="/zfb/">Innora AI — Alipay Research</a>
+<a class="brand" href="/zfb/"><span class="zh">Innora AI — 支付宝安全研究</span><span class="en">Innora AI — Alipay Research</span></a>
 <ul class="innora-nav-links" id="inav">
-<li><a href="/zfb/">Main</a></li>
-<li><a href="/zfb/article_censorship.html">Censorship</a></li>
-<li><a href="/zfb/patchproxy-146k.html">PatchProxy</a></li>
-<li><a href="/zfb/wifi-rtt-tracking.html">WiFi RTT</a></li>
-<li><a href="/zfb/transport-encryption.html">Encryption</a></li>
-<li><a href="/zfb/privacy-analysis.html">Privacy</a></li>
-<li><a href="/zfb/regulatory-complaint.html">Regulatory</a></li>
-<li><a href="/zfb/rebuttal.html">Rebuttal</a></li>
+<li><a href="/zfb/"><span class="zh">首页</span><span class="en">Main</span></a></li>
+<li><a href="/zfb/article_censorship.html"><span class="zh">审查记录</span><span class="en">Censorship</span></a></li>
+<li><a href="/zfb/patchproxy-146k.html"><span class="zh">热修复146K</span><span class="en">PatchProxy</span></a></li>
+<li><a href="/zfb/wifi-rtt-tracking.html"><span class="zh">WiFi定位追踪</span><span class="en">WiFi RTT</span></a></li>
+<li><a href="/zfb/transport-encryption.html"><span class="zh">传输加密</span><span class="en">Encryption</span></a></li>
+<li><a href="/zfb/privacy-analysis.html"><span class="zh">隐私分析</span><span class="en">Privacy</span></a></li>
+<li><a href="/zfb/regulatory-complaint.html"><span class="zh">监管投诉</span><span class="en">Regulatory</span></a></li>
+<li><a href="/zfb/rebuttal.html"><span class="zh">法律回应</span><span class="en">Rebuttal</span></a></li>
 </ul>
 <button class="innora-hmb" onclick="document.getElementById('inav').classList.toggle('open')"><i></i><i></i><i></i></button>
 </nav>
 <div class="innora-badge">
-<span>Verify:</span>
+<span><span class="zh">验证:</span><span class="en">Verify:</span></span>
 <a href="https://github.com/sgInnora/alipay-securityguard-analysis">Docker 37/37</a>
 <span>|</span>
 <a href="https://zenodo.org/records/19186848">Zenodo DOI</a>
@@ -88,6 +88,7 @@
 </div>
 </header>
 <!-- /Innora Global Nav -->
+
 
 
 <!-- Alipay Privacy Analysis | WeChat Public | 2026-03-17 --><section style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.75; color: #2c3e50; text-align: justify; letter-spacing: 0.5px; padding: 0 6px"><h1 style="font-size: 22px; font-weight: bold; color: #1a252f; margin: 30px 0 15px; border-bottom: 2px solid #00d4aa; padding-bottom: 10px; line-height: 1.4; background: linear-gradient(90deg, rgba(0,212,170,0.1) 0%, transparent 100%); padding: 10px 0 10px 12px">支付宝需要监控你的截屏、蓝牙和通话吗？一次完整的逆向工程分析</h1>
