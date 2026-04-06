@@ -2565,7 +2565,7 @@ Language/zh-Hant Region/CN</code></pre>
         <li>支付宝的预填是<strong>攻击者通过 URL 参数指定</strong>收款账号和金额 — 性质完全不同</li>
         <li>结合 UI 欺骗能力（<code>setTitle</code>/<code>showToast</code>），攻击者可以伪造合法转账理由，降低用户警惕</li>
       </ul>
-      <p>参与讨论的 <a href="https://github.com/sgInnora/alipay-deeplink-research/issues/4" target="_blank">cxxsheng</a> 独立编写了 PoC，结论：<em>「还是认为这个功能是漏洞，但是危害性会低一些」</em>。他还引用了 <a href="https://github.com/advisories/GHSA-88q7-6vxh-w5q7" target="_blank">CVE-2024-40676</a>（Android 先例）：减少用户交互步骤本身可以构成漏洞。</p>
+      <p>一位参与讨论的独立安全研究者编写了 PoC，结论：<em>「还是认为这个功能是漏洞，但是危害性会低一些」</em>。该研究者还引用了 <a href="https://github.com/advisories/GHSA-88q7-6vxh-w5q7" target="_blank">CVE-2024-40676</a>（Android 先例）：减少用户交互步骤本身可以构成漏洞。</p>
     </div>
     <div class="en">
       <p style="color:#9898a8;font-style:italic;margin:0 0 12px 0;">Source: GitHub Issue #4 (sevck, rama2910****10)</p>
@@ -2576,7 +2576,7 @@ Language/zh-Hant Region/CN</code></pre>
         <li>Alipay's pre-fill is <strong>specified by the attacker via URL parameters</strong> for recipient account and amount — fundamentally different</li>
         <li>Combined with UI spoofing (<code>setTitle</code>/<code>showToast</code>), attackers can fabricate legitimate-looking transfer reasons, reducing user vigilance</li>
       </ul>
-      <p><a href="https://github.com/sgInnora/alipay-deeplink-research/issues/4" target="_blank">cxxsheng</a> independently wrote a PoC and concluded: <em>"I still consider this a vulnerability, but with lower severity."</em> He also cited <a href="https://github.com/advisories/GHSA-88q7-6vxh-w5q7" target="_blank">CVE-2024-40676</a> (Android precedent): reducing user interaction steps itself can constitute a vulnerability.</p>
+      <p>An independent security researcher wrote a PoC and concluded: <em>"I still consider this a vulnerability, but with lower severity."</em> The researcher also cited <a href="https://github.com/advisories/GHSA-88q7-6vxh-w5q7" target="_blank">CVE-2024-40676</a> (Android precedent): reducing user interaction steps itself can constitute a vulnerability.</p>
     </div>
   </div>
 
@@ -2667,7 +2667,7 @@ Language/zh-Hant Region/CN</code></pre>
         <li><strong>PDPC 新加坡</strong> — 启动正式数据保护调查 (#006****24)</li>
         <li><strong>CIRCL 卢森堡 CERT</strong> — 事件处理人员主动代为联系 Alibaba SRC</li>
         <li><strong>HKMA 香港金管局</strong> — 立案调查 (Case CE2026****5412)</li>
-        <li><strong>cxxsheng</strong>（GitHub 安全研究者）— 独立编写 PoC 后确认漏洞存在</li>
+        <li><strong>独立安全研究者</strong>（GitHub）— 独立编写 PoC 后确认漏洞存在</li>
         <li><strong>freshnn</strong>（GitHub 用户）— 独立确认 Android 无感 GPS 复现成功</li>
       </ul>
     </div>
@@ -2682,7 +2682,7 @@ Language/zh-Hant Region/CN</code></pre>
         <li><strong>PDPC Singapore</strong> — Formal data protection investigation (#006****24)</li>
         <li><strong>CIRCL Luxembourg CERT</strong> — Incident handler proactively contacted Alibaba SRC on our behalf</li>
         <li><strong>HKMA Hong Kong</strong> — Case filed (CE2026****5412)</li>
-        <li><strong>cxxsheng</strong> (GitHub researcher) — Independently wrote PoC and confirmed vulnerability exists</li>
+        <li><strong>Independent researcher</strong> (GitHub) — Independently wrote PoC and confirmed vulnerability exists</li>
         <li><strong>freshnn</strong> (GitHub user) — Independently confirmed silent GPS reproduction on Android</li>
       </ul>
     </div>
@@ -2864,7 +2864,8 @@ if (saved === 'zh') setLang('zh');
 <a href="https://github.com/sgInnora/alipay-securityguard-analysis" style="color:#4488ff">GitHub</a> · 
 <a href="https://zenodo.org/records/19186848" style="color:#4488ff">Zenodo</a> · 
 <a href="https://eprint.iacr.org/2026/526" style="color:#4488ff">IACR</a> · 
-<a href="https://packetstormsecurity.com/files/217089/" style="color:#4488ff">Packet Storm</a>
+<a href="https://packetstormsecurity.com/files/217089/" style="color:#4488ff">Packet Storm</a> · 
+<a href="https://infosec.exchange/@Innora" style="color:#4488ff" rel="me">Mastodon</a>
 </p>
 </footer>
 <script>document.addEventListener('DOMContentLoaded',function(){var p=location.pathname;document.querySelectorAll('.innora-nav-links a').forEach(function(a){if(p.endsWith(a.getAttribute('href').replace('/zfb/',''))||((p.endsWith('/zfb/')||p.endsWith('/zfb'))&&a.getAttribute('href')=='/zfb/'))a.style.color='#4488ff';a.style.fontWeight='bold'});var b=document.getElementById('btt');if(b)window.addEventListener('scroll',function(){b.style.display=window.scrollY>400?'block':'none'})});</script>
